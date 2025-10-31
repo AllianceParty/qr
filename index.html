@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Scanner</title>
+  <link rel="icon" type="image/x-icon" href="logo.png">
+  <style>
+    body {
+      background-color: #121212;
+      color: #f1c40f;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .scanner-container {
+      text-align: center;
+      border: 2px solid #f1c40f;
+      padding: 2rem;
+      border-radius: 12px;
+      animation: fadeIn 1s ease-in-out;
+      box-shadow: 0 0 20px #f1c40f;
+      max-width: 600px;
+      width: 100%;
+    }
+    video {
+      width: 100%;
+      border: 2px solid #f1c40f;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+    #student-info {
+      animation: slideUp 0.5s ease-in-out;
+    }
+    .hidden {
+      display: none;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="scanner-container">
+    <h1>Event Scanner</h1>
+    <video id="video" autoplay></video>
+    <div id="student-info" class="hidden">
+      <p><strong>Name:</strong> <span id="name"></span></p>
+      <p><strong>Class:</strong> <span id="class"></span></p>
+      <p><strong>Section:</strong> <span id="section"></span></p>
+      <p><strong>Event:</strong> <span id="event"></span></p>
+      <p><strong>Category:</strong> <span id="category"></span></p>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script>
+    const codeReader = new ZXing.BrowserQRCodeReader();
+    const videoElement = document.getElementById('video');
+    const studentInfo = document.getElementById('student-info');
+    const nameEl = document.getElementById('name');
+    const classEl = document.getElementById('class');
+    const sectionEl = document.getElementById('section');
+    const eventEl = document.getElementById('event');
+    const categoryEl = document.getElementById('category');
+
+    const studentData = {
+      "09A000ZZ": {
+        name: "Test",
+        class: "Default",
+        section: "n/a",
+        event: "Testificate",
+        category: "One"
+      },
+      "0": {
+        name: "Null",
+        class: "Error",
+        section: "Erorr",
+        event: "Error",
+        category: "DELETE THIS APP NOW!"
+      }
+    };
+
+    const beepValid = new AudioContext();
+    const beepInvalid = new AudioContext();
+
+    function playBeep(type) {
+      const ctx = type === 'valid' ? beepValid : beepInvalid;
+      const duration = type === 'valid' ? 0.5 : 0.2;
+      const count = type === 'valid' ? 1 : 2;
+
+      for (let i = 0; i < count; i++) {
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, ctx.currentTime + i * (duration + 0.1));
+        oscillator.start(ctx.currentTime + i * (duration + 0.1));
+        oscillator.stop(ctx.currentTime + i * (duration + 0.1) + duration);
+      }
+    }
+
+    codeReader.decodeFromVideoDevice(null, 'video', (result, err) => {
+      if (result) {
+        const code = result.text.trim();
+        if (studentData[code]) {
+          const student = studentData[code];
+          nameEl.textContent = student.name;
+          classEl.textContent = student.class;
+          sectionEl.textContent = student.section;
+          eventEl.textContent = student.event;
+          categoryEl.textContent = student.category;
+          studentInfo.classList.remove('hidden');
+          playBeep('valid');
+        } else {
+          studentInfo.classList.add('hidden');
+          playBeep('invalid');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
